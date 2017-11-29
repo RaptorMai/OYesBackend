@@ -1,0 +1,77 @@
+For the database, we have 4 schemas: Request, price, tutors and users
+notes: tid(tutor id), qid(question id), sid(student id)
+1. Request:
+    active:
+        <category | {Basic Calculus, ...}>
+            <qid>
+                category:
+                description:
+                duration:
+                picURL:
+                qid:
+                rate:
+                sid:
+                status:
+                tid:
+                time:
+    inactive:
+        same as active, because questions are simply added to here from active
+
+2. price: 
+    <price amount (times 100 for stripe)>:<minutes>
+3. tutors:
+    <tid>
+        balance:
+        category:
+        completeBalanceHistory:
+            <qid>
+                category:
+                date: (unix time format)
+                sesionTime: (in mins)
+        monthlyBalanceHistory:
+            <yearmonth ie:20179>
+                monthlyTotal:
+                qnum:
+                stars:
+        stars:
+        totalQuestionNum:
+        email:
+        profilePhoto:
+        token: (casused by createStripeUser function)
+        
+4. users:
+    <sid>:
+        balance:
+        name:
+        email:
+        profilePhoto:
+        grade
+        completeBalanceHistory:
+            <qid> if consume balance
+                date: (unix time format)
+                sesionTime: (in mins)
+            or
+            <pid> if purchase
+                price:
+                timePurchased:
+                date:
+        payments:
+            charges:
+                <pid>
+                    bunch of shit returned by stripe
+            customerId:
+            sources:
+                error:
+                token:
+<<<<<<< HEAD
+ 5. globalConfig:
+        packageUpdateReq:
+        categoryUpdateReq:
+        forcedUpdateReq:
+        
+6. category:
+        category{ex.Math}:
+            sub-category(ex. Basic Calculus):{1 or 0}
+=======
+               
+>>>>>>> dev
