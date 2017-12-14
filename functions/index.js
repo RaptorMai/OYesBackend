@@ -525,45 +525,26 @@ exports.getCategory = functions.https.onRequest((req, res) => {
 
 exports.cancel = functions.https.onRequest((req, res) => {
 
-
-  // [START usingMiddleware]
-  // Enable CORS using the `cors` express middleware.
-  cors(req, res, () => {
-  // [END usingMiddleware]
-    // Reading date format from URL query parameter.
-    // [START readQueryParam]
-    /*
-    let format = req.query.format;
-    // [END readQueryParam]
-    // Reading date format from request body query parameter
-    if (!format) {
-      // [START readBodyParam]
-      format = req.body.format;
-      // [END readBodyParam]
-    }
-    // [START sendResponse]
-    const formattedDate = moment().format(format);
-    console.log('Sending Formatted date:', formattedDate);
-    res.status(200).send(formattedDate);*/
-    // [END sendResponse]
-
-    let qid = req.query.qid;
-    let category = req.query.category;
-    var ref = admin.database().ref("/Request/active/" + category +"/"+ qid);
-	ref.on("value", function(snapshot) {
-		if (snapshot.exists()) { 
-			let url = snapshot.val().picURL
-			const filePath = 'image/' + category + '/' + qid
-			const bucket = gcs.bucket("instasolve-d8c55.appspot.com")
-			const file = bucket.file(filePath)
-			const pr = file.delete()
-		    ref.remove();
-		    ref.off();
-		  }
-	})
-
-    res.status(200).send(req.query.category);
-  });
+	cors(req, res, () => {
+	  	console.log("getin");
+		const questionId = req.query.qid;
+		const category = req.query.category;
+		console.log(questionId);
+		var ref = admin.database().ref("/Request/active/" + category +"/"+ questionId);
+		console.log("Cancel Question triggered");
+		ref.once("value").then(snapshot => {
+			var changedQ = snapshot.val();
+			console.log("what does it return");
+			console.log(snapshot.val());
+			console.log("removing node");
+			ref.remove().then(function(){
+				console.log("add to inactive");
+				var reference = admin.database().ref("/Request/cancel/" + category +"/"+ questionId);
+		   		reference.set(changedQ);
+		   		res.status(200).send(true);
+			});
+		})
+	});
 });
 
 exports.promotion = functions.https.onRequest((req, res) => {
@@ -624,37 +605,40 @@ exports.sendTutorNotification = functions.database.ref('/Request/active/{categor
 })
 
 exports.sendStudentNotification = functions.database.ref('/Request/active/{category}/{qid}/status').onUpdate(event => {
+	
 	const category = event.params.category;
 	event.data.ref.parent.child('sid').on("value", function(snapshot) {
 		var sid = snapshot.val()
 		console.log(sid)
-		if (event.data.val() == 1){
+		if (sid){
+			if (event.data.val() == 1){
 
-			return loadStudentToken(sid).then(notification => {
-				const payload = {
-				  notification: {
-				    title: `Tutor connected`,
-				    body: `Your ${category} tutor is connected`,
-				    sound: 'default'
-				  }
-				};
-				console.log("back" + notification)
-		        return admin.messaging().sendToDevice(notification, payload);
-	    	});
+				return loadStudentToken(sid).then(notification => {
+					const payload = {
+					  notification: {
+					    title: `Tutor connected`,
+					    body: `Your ${category} tutor is connected`,
+					    sound: 'default'
+					  }
+					};
+					console.log("back" + notification)
+			        return admin.messaging().sendToDevice(notification, payload);
+		    	});
 
-		}
-		else if(event.data.val() == 2){
-			return loadStudentToken(sid).then(notification => {
-				const payload = {
-				  notification: {
-				    title: `Session begins`,
-				    body: `Your ${category} session begins`,
-				    sound: 'default'
-				  }
-				};
-				console.log("back" + notification)
-		        return admin.messaging().sendToDevice(notification, payload);
-	    	});
+			}
+			else if(event.data.val() == 2){
+				return loadStudentToken(sid).then(notification => {
+					const payload = {
+					  notification: {
+					    title: `Session begins`,
+					    body: `Your ${category} session begins`,
+					    sound: 'default'
+					  }
+					};
+					console.log("back" + notification)
+			        return admin.messaging().sendToDevice(notification, payload);
+		    	});
+			}
 		}
 	})
 })
